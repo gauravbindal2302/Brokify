@@ -28,7 +28,7 @@ export default function CSVUploader() {
 
         rawData.forEach((item) => {
           const name = item['Item Name']?.trim();
-          const qty = Number(item['Item Quantity']) || Number(item['Quantity']) || 0;
+          const qty: number = Number(item['Item Quantity']);
           if (name) {
             aggregationMap.set(name, (aggregationMap.get(name) || 0) + qty);
           }
