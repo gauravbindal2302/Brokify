@@ -1,17 +1,18 @@
 'use client';
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Papa from 'papaparse';
 
 type Item = {
   'Item Name': string;
-  'Quantity': string | number;  // Change to 'Quantity' for consistency with the CSV
+  'Quantity': string | number;
 };
 
 export default function CSVUploader() {
   const [data, setData] = useState<Item[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [rates, setRates] = useState<{ [key: number]: number }>({});
+  const [rawRows, setRawRows] = useState<any[]>([]);
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = event.target.files?.[0];
@@ -24,11 +25,12 @@ export default function CSVUploader() {
       skipEmptyLines: true,
       complete: (result) => {
         const rawData = result.data;
-        const aggregationMap = new Map<string, number>();
+        setRawRows(rawData);
 
+        const aggregationMap = new Map<string, number>();
         rawData.forEach((item) => {
           const name = item['Item Name']?.trim();
-          const qty = Number(item['Quantity']) || 0;  // Ensure to reference 'Quantity' here
+          const qty = Number(item['Quantity']) || 0;
           if (name) {
             aggregationMap.set(name, (aggregationMap.get(name) || 0) + qty);
           }
@@ -40,7 +42,6 @@ export default function CSVUploader() {
         }));
 
         setData(aggregatedData);
-        setRates({});
       },
       error: (error) => {
         console.error('Error parsing CSV:', error);
@@ -74,15 +75,17 @@ export default function CSVUploader() {
       {!file ? (
         <input
           type="file"
-          accept=".csv,application/pdf"
+          accept=".csv"
           onChange={handleFileUpload}
           className="border border-gray-500 text-gray-500 rounded px-4 py-2 cursor-pointer"
         />
       ) : (
         <div className="overflow-auto">
           <button
-            onClick={() => window.print()}
-            className="mb-8 px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => {
+              window.print();
+            }}
+            className="print-btn mb-8 px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Print
           </button>
@@ -96,34 +99,77 @@ export default function CSVUploader() {
               </span>
             </div>
           )}
+
           <table className="mt-8 min-w-full border border-gray-300 text-sm text-center text-black">
             <thead className="bg-gray-100">
-              {data.length > 0 && (
-                <tr className="text-left">
-                  <th className="px-3 py-2 border border-gray-300 w-[10%]">S.No.</th>
-                  <th className="px-3 py-2 border border-gray-300 w-[50%]">Item Name</th>
-                  <th className="px-3 py-2 border border-gray-300 w-[25%]">Item Quantity</th>
-                  <th className="px-3 py-2 border border-gray-300 w-[5%]"></th>
-                </tr>
-              )}
+              <tr className="text-left">
+                <th className="px-3 py-2 border border-gray-300 w-[10%]">S.No.</th>
+                <th className="px-3 py-2 border border-gray-300 w-[55%]">Item Name</th>
+                <th className="px-3 py-2 border border-gray-300 w-[30%]">Item Quantity</th>
+                <th className="px-3 py-2 border border-gray-300 w-[5%]" />
+              </tr>
             </thead>
             <tbody>
               {data.map((row, index) => (
-                <tr key={index} className="even:bg-gray-50 text-left">
-                  <td className="px-3 py-2 border border-gray-300 w-[10%]">{index + 1}</td>
-                  <td className="px-3 py-2 border border-gray-300 w-[50%]">{row['Item Name']}</td>
-                  <td className="px-3 py-2 border border-gray-300 w-[25%]">{row['Quantity']}</td>
-                  <td className="px-3 py-2 border border-gray-300 w-[5%]">
-                    <input
-                      type="number"
-                      min="0"
-                      value={rates[index] || ''}
-                      onChange={(e) => handleRateChange(index, e.target.value)}
-                      className="bg-gray-100 max-w-[40px] px-2 rounded focus-none outline-none"
-                      placeholder="?"
-                    />
-                  </td>
-                </tr>
+                <React.Fragment key={index}>
+                  <tr className="even:bg-gray-50 text-left">
+                    <td className="px-3 py-2 border border-gray-300">{index + 1}</td>
+                    <td className="px-3 py-2 border border-gray-300">
+                      <button
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setExpandedItem(expandedItem === row['Item Name'] ? null : row['Item Name']);
+                        }}
+                      >
+                        {row['Item Name']}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2 border border-gray-300">{row['Quantity']}</td>
+                    <td className="px-3 py-2 border border-gray-300">
+                      <input
+                        type="number"
+                        min="0"
+                        value={rates[index] || ''}
+                        onChange={(e) => handleRateChange(index, e.target.value)}
+                        className="bg-gray-100 max-w-[40px] px-2 rounded focus-none outline-none"
+                        placeholder="?"
+                      />
+                    </td>
+                  </tr>
+
+                  {expandedItem === row['Item Name'] && (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-2 border border-gray-300">
+                        <table className="w-full text-sm border border-gray-300">
+                          <thead className="bg-gray-300">
+                            <tr>
+                              <th className="border px-3 py-2">S.No.</th>
+                              <th className="border px-3 py-2">Date</th>
+                              <th className="border px-3 py-2">Sold To</th>
+                              <th className="border px-3 py-2">City ST</th>
+                              <th className="border px-3 py-2">Quantity</th>
+                              <th className="border px-3 py-2">Rate</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rawRows
+                              .filter((rowData) => rowData['Item Name']?.trim() === expandedItem)
+                              .map((rowData, idx) => (
+                                <tr key={idx}>
+                                  <td className="border px-3 py-2">{idx + 1}</td>
+                                  <td className="border px-3 py-2">{rowData['Date']}</td>
+                                  <td className="border px-3 py-2">{rowData['Sold To']}</td>
+                                  <td className="border px-3 py-2">{rowData['City ST']}</td>
+                                  <td className="border px-3 py-2">{rowData['Quantity']}</td>
+                                  <td className="border px-3 py-2">{rowData['Rate']}</td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -131,13 +177,13 @@ export default function CSVUploader() {
           <div className="mt-4 flex">
             <div className="w-full flex justify-between text-sm font-semibold bg-[#004aad] text-white">
               <span className="w-[65%] px-3 py-2">Total (No.)</span>
-              <span className="w-[35%] px-3 py-2">{sum_of_quantity}</span>
+              <span className="w-[40%] px-3 py-2">{sum_of_quantity}</span>
             </div>
           </div>
           <div className="mt-4 flex">
             <div className="w-full flex justify-between text-sm font-semibold bg-[#ff9a08] text-black">
               <div className="w-[65%] px-3 py-2">Total (Rs)</div>
-              <div className="w-[35%] px-3 py-2">₹{total_amount}</div>
+              <div className="w-[40%] px-3 py-2">₹{total_amount}</div>
             </div>
           </div>
         </div>

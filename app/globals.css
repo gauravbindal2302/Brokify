@@ -29,7 +29,7 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  button {
+  .print-btn {
     display: none;
   }
 }
