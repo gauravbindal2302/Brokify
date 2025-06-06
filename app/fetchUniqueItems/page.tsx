@@ -5,7 +5,7 @@ import Papa from 'papaparse';
 
 type Item = {
   'Item Name': string;
-  'Item Quantity': string | number;
+  'Quantity': string | number;  // Change to 'Quantity' for consistency with the CSV
 };
 
 export default function CSVUploader() {
@@ -28,7 +28,7 @@ export default function CSVUploader() {
 
         rawData.forEach((item) => {
           const name = item['Item Name']?.trim();
-          const qty = Number(item['Quantity']) || 0;
+          const qty = Number(item['Quantity']) || 0;  // Ensure to reference 'Quantity' here
           if (name) {
             aggregationMap.set(name, (aggregationMap.get(name) || 0) + qty);
           }
@@ -36,7 +36,7 @@ export default function CSVUploader() {
 
         const aggregatedData = Array.from(aggregationMap, ([name, totalQty]) => ({
           'Item Name': name,
-          'Item Quantity': totalQty,
+          'Quantity': totalQty,
         }));
 
         setData(aggregatedData);
@@ -59,12 +59,12 @@ export default function CSVUploader() {
   };
 
   const sum_of_quantity = data.reduce(
-    (acc, item) => acc + Number(item['Item Quantity']),
+    (acc, item) => acc + Number(item['Quantity']),
     0
   );
 
   const total_amount = data.reduce((acc, item, index) => {
-    const quantity = Number(item['Item Quantity']);
+    const quantity = Number(item['Quantity']);
     const rate = rates[index] || 0;
     return acc + quantity * rate;
   }, 0);
@@ -112,7 +112,7 @@ export default function CSVUploader() {
                 <tr key={index} className="even:bg-gray-50 text-left">
                   <td className="px-3 py-2 border border-gray-300 w-[10%]">{index + 1}</td>
                   <td className="px-3 py-2 border border-gray-300 w-[50%]">{row['Item Name']}</td>
-                  <td className="px-3 py-2 border border-gray-300 w-[25%]">{row['Item Quantity']}</td>
+                  <td className="px-3 py-2 border border-gray-300 w-[25%]">{row['Quantity']}</td>
                   <td className="px-3 py-2 border border-gray-300 w-[5%]">
                     <input
                       type="number"
