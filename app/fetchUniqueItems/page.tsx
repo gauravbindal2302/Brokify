@@ -12,7 +12,7 @@ export default function CSVUploader() {
   const [file, setFile] = useState<File | null>(null);
   const [rates, setRates] = useState<{ [key: number]: number }>({});
   const [rawRows, setRawRows] = useState<any[]>([]);
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = event.target.files?.[0];
@@ -59,6 +59,18 @@ export default function CSVUploader() {
     }
   };
 
+  const toggleItemExpansion = (itemName: string) => {
+    setExpandedItems((prev) => {
+      const newExpandedItems = new Set(prev);
+      if (newExpandedItems.has(itemName)) {
+        newExpandedItems.delete(itemName);
+      } else {
+        newExpandedItems.add(itemName);
+      }
+      return newExpandedItems;
+    });
+  };
+
   const sum_of_quantity = data.reduce(
     (acc, item) => acc + Number(item['Quantity']),
     0
@@ -77,7 +89,7 @@ export default function CSVUploader() {
           type="file"
           accept=".csv"
           onChange={handleFileUpload}
-          className="border border-gray-500 text-gray-500 rounded px-4 py-2 cursor-pointer"
+          className="w-full border border-gray-500 text-gray-500 rounded px-4 py-2 cursor-pointer"
         />
       ) : (
         <div className="overflow-auto">
@@ -100,7 +112,7 @@ export default function CSVUploader() {
             </div>
           )}
 
-          <table className="mt-8 min-w-full border border-gray-300 text-sm text-center text-black">
+          <table className="mt-8 min-w-full border border-gray-300 text-xs lg:text-sm text-center text-black">
             <thead className="bg-gray-100">
               <tr className="text-left">
                 <th className="px-3 py-2 border border-gray-300 w-[10%]">S.No.</th>
@@ -116,10 +128,8 @@ export default function CSVUploader() {
                     <td className="px-3 py-2 border border-gray-300">{index + 1}</td>
                     <td className="px-3 py-2 border border-gray-300">
                       <button
-                        className="cursor-pointer"
-                        onClick={() => {
-                          setExpandedItem(expandedItem === row['Item Name'] ? null : row['Item Name']);
-                        }}
+                        className="cursor-pointer text-left"
+                        onClick={() => toggleItemExpansion(row['Item Name'])}
                       >
                         {row['Item Name']}
                       </button>
@@ -137,13 +147,13 @@ export default function CSVUploader() {
                     </td>
                   </tr>
 
-                  {expandedItem === row['Item Name'] && (
+                  {expandedItems.has(row['Item Name']) && (
                     <tr>
                       <td colSpan={4} className="px-3 py-2 border border-gray-300">
-                        <table className="w-full text-sm border border-gray-300">
+                        <table className="w-full text-xs lg:text-sm border border-gray-300">
                           <thead className="bg-gray-300">
                             <tr>
-                              <th className="border px-3 py-2">S.No.</th>
+                              {/*<th className="border px-3 py-2">S.No.</th>*/}
                               <th className="border px-3 py-2">Date</th>
                               <th className="border px-3 py-2">Sold To</th>
                               <th className="border px-3 py-2">City ST</th>
@@ -153,10 +163,10 @@ export default function CSVUploader() {
                           </thead>
                           <tbody>
                             {rawRows
-                              .filter((rowData) => rowData['Item Name']?.trim() === expandedItem)
+                              .filter((rowData) => rowData['Item Name']?.trim() === row['Item Name'])
                               .map((rowData, idx) => (
                                 <tr key={idx}>
-                                  <td className="border px-3 py-2">{idx + 1}</td>
+                                  {/*<td className="border px-3 py-2">{idx + 1}</td>*/}
                                   <td className="border px-3 py-2">{rowData['Date']}</td>
                                   <td className="border px-3 py-2">{rowData['Sold To']}</td>
                                   <td className="border px-3 py-2">{rowData['City ST']}</td>
